@@ -3,32 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>QR Pass - CRA Library</title>
+  <title>ลงทะเบียน - CRA Library</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- 🟢 เปลี่ยนลิงก์ไอคอนเป็นเวอร์ชันล่าสุด 🟢 -->
   <link href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons@3.3.1/css/all/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
   <style>
     body { 
         font-family: 'Sarabun', sans-serif; 
         background-color: #f0f4f8; 
         background-image: radial-gradient(circle at 10% 20%, rgb(239, 246, 255) 0%, rgb(219, 234, 254) 90%);
         color: #1e293b; 
-        overflow-x: hidden;
     }
     
-    /* Background Decorative Blurs */
-    .blob { animation: blob 7s infinite; }
-    .animation-delay-2000 { animation-delay: 2s; }
-    @keyframes blob {
-      0% { transform: translate(0px, 0px) scale(1); }
-      33% { transform: translate(30px, -50px) scale(1.1); }
-      66% { transform: translate(-20px, 20px) scale(0.9); }
-      100% { transform: translate(0px, 0px) scale(1); }
-    }
-
-    /* Glass Card */
+    /* Modern Glass Card */
     .glass-card { 
         background: rgba(255, 255, 255, 0.95); 
         backdrop-filter: blur(20px);
@@ -38,16 +28,27 @@
     }
 
     /* Modern Inputs */
-    .modern-input { 
+    .modern-input, .modern-select { 
         width: 100%; padding: 1.125rem 1.25rem; border-radius: 1rem; 
         background: #f8fafc; border: 2px solid transparent; 
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
         font-size: 1rem; font-weight: 500; color: #334155;
     }
-    .modern-input:focus { 
+    .modern-input:focus, .modern-select:focus { 
         background: #ffffff; border-color: #3b82f6; 
         box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); outline: none; 
     }
+    
+    /* Type Selection Radio Cards */
+    .type-radio-peer:checked + .type-card {
+        border-color: #2563eb; background-color: #eff6ff;
+        box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.2);
+        transform: translateY(-2px);
+    }
+    .type-radio-peer:checked + .type-card .icon-circle {
+        background-color: #2563eb; color: white;
+    }
+    .type-card { transition: all 0.3s ease; }
     
     /* Modern Button */
     .btn-modern { 
@@ -59,91 +60,244 @@
         transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4); 
     }
     .btn-modern:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
+    
+    .btn-outline {
+        background: transparent; border: 2px solid #cbd5e1; color: #64748b; transition: all 0.3s ease;
+    }
+    .btn-outline:hover { background: #f1f5f9; border-color: #94a3b8; color: #334155; }
+
+    /* Step Animation */
+    .step-container { display: none; opacity: 0; }
+    .step-active { 
+        display: block; 
+        animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+    }
+    
+    @keyframes slideUpFade { 
+        0% { opacity: 0; transform: translateY(20px); } 
+        100% { opacity: 1; transform: translateY(0); } 
+    }
 
     /* Hide number arrows */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     
-    /* Fade Animation */
-    .fade-in { animation: fadeIn 0.4s ease forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .req::after { content: " *"; color: #ef4444; }
   </style>
 </head>
-<body class="min-h-screen p-4 flex items-center justify-center relative">
+<body class="min-h-screen p-4 flex items-center justify-center pb-12 relative overflow-x-hidden">
 
-  <div class="absolute top-[5%] right-[10%] w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-[80px] opacity-50 blob"></div>
-  <div class="absolute bottom-[10%] left-[10%] w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-[80px] opacity-40 blob animation-delay-2000"></div>
+  <!-- Background Decorative Blurs -->
+  <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-blob"></div>
+  <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-amber-200 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-blob animation-delay-2000"></div>
 
-  <div id="loginView" class="glass-card w-full max-w-sm p-6 md:p-8 text-center relative z-10 fade-in">
-    <a href="index.html" class="absolute top-6 left-6 w-10 h-10 bg-slate-100/80 text-slate-500 rounded-full flex items-center justify-center hover:bg-slate-200 transition shrink-0"><i class="fi fi-sr-angle-left mt-1"></i></a>
+  <!-- Main Container -->
+  <div id="mainWrap" class="glass-card w-full max-w-xl p-6 md:p-10 relative z-10 hidden mt-4">
     
-    <div class="w-20 h-20 bg-blue-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-5 border border-blue-100 shadow-inner">
-        <i class="fi fi-sr-qr-scan text-4xl text-blue-600 mt-2"></i>
-    </div>
-    <h2 class="text-2xl font-black text-slate-800 mb-1 tracking-tight">เข้าสู่ระบบ QR Pass</h2>
-    <p class="text-sm text-slate-500 mb-8 font-medium">สำหรับสแกนเข้าใช้บริการห้องสมุด</p>
-
-    <form id="emailForm" onsubmit="verifyUser(event, 'email')" class="space-y-5 fade-in">
-        <!-- 🟢 อัปเดตช่องกรอกอีเมลในหน้า Login 🟢 -->
-        <div class="text-left relative">
-            <label class="block text-sm font-bold mb-2 text-slate-700">อีเมล (Email)</label>
-            <input type="email" id="loginEmail" class="modern-input font-sans" placeholder="กรอกอีเมลที่ลงทะเบียนไว้" required oninput="suggestEmail(this.value)" autocomplete="off">
-            <div id="emailSuggest" class="hidden absolute top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden text-left"></div>
-        </div>
-        <button type="submit" id="btnSubmitEmail" class="w-full btn-modern py-4 rounded-xl font-bold text-lg flex justify-center items-center gap-2">ดำเนินการต่อ <i class="fi fi-sr-arrow-right mt-1"></i></button>
-        <button type="button" onclick="toggleForm()" class="text-sm text-blue-600 font-bold hover:text-blue-800 hover:underline mt-2 transition-colors">จำอีเมลไม่ได้? เข้าสู่ระบบด้วยเบอร์โทร</button>
-    </form>
-
-    <form id="phoneForm" onsubmit="verifyUser(event, 'phone')" class="space-y-5 hidden fade-in">
-        <div class="text-left">
-            <label class="block text-sm font-bold mb-2 text-slate-700">เบอร์โทรศัพท์มือถือ</label>
-            <div class="relative">
-                <i class="fi fi-sr-smartphone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="number" id="loginPhone" class="modern-input pl-12 font-sans" placeholder="08XXXXXXXX (10 หลัก)" required oninput="if(this.value.length > 10) this.value = this.value.slice(0,10);">
+    <!-- Header & Progress -->
+    <div class="flex items-center gap-4 mb-8">
+        <a href="index.html" class="w-10 h-10 bg-slate-100/80 text-slate-500 rounded-full flex items-center justify-center hover:bg-slate-200 transition shrink-0">
+            <i class="fi fi-sr-angle-left mt-1"></i>
+        </a>
+        <div class="flex-1">
+            <h2 class="text-2xl font-black text-slate-800 tracking-tight">สร้างบัตรห้องสมุด</h2>
+            
+            <!-- Progress Bar -->
+            <div class="flex gap-2 mt-3" id="progressBar">
+                <div class="h-1.5 flex-1 bg-blue-600 rounded-full transition-all duration-500" id="prog1"></div>
+                <div class="h-1.5 flex-1 bg-slate-200 rounded-full transition-all duration-500" id="prog2"></div>
+                <div class="h-1.5 flex-1 bg-slate-200 rounded-full transition-all duration-500" id="prog3"></div>
             </div>
         </div>
-        <button type="submit" id="btnSubmitPhone" class="w-full btn-modern py-4 rounded-xl font-bold text-lg flex justify-center items-center gap-2">ดำเนินการต่อ <i class="fi fi-sr-arrow-right mt-1"></i></button>
-        <button type="button" onclick="toggleForm()" class="text-sm text-slate-500 font-bold hover:text-slate-700 hover:underline mt-2 transition-colors">กลับไปใช้อีเมลองค์กร</button>
+    </div>
+
+    <!-- Form Area -->
+    <form id="regForm" onsubmit="submitRegistration(event)">
+        
+        <!-- ================= STEP 1: User Type ================= -->
+        <div id="step1" class="step-container step-active">
+            <h3 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">1</span> 
+                เลือกประเภทผู้ใช้งาน
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- นักศึกษา -->
+                <label class="cursor-pointer relative">
+                    <input type="radio" name="userType" value="นักศึกษา" class="peer type-radio-peer hidden">
+                    <div class="type-card border-2 border-slate-200 bg-white p-5 rounded-2xl flex flex-col items-center text-center gap-3">
+                        <div class="icon-circle w-14 h-14 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center transition-colors">
+                            <i class="fi fi-sr-graduation-cap text-2xl mt-1"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-lg">นักศึกษา</div>
+                            <div class="text-xs text-slate-500 mt-1 font-medium">ระดับปริญญาตรีและบัณฑิตศึกษา</div>
+                        </div>
+                    </div>
+                </label>
+
+                <!-- บุคลากร -->
+                <label class="cursor-pointer relative">
+                    <input type="radio" name="userType" value="บุคลากรและอาจารย์" class="peer type-radio-peer hidden">
+                    <div class="type-card border-2 border-slate-200 bg-white p-5 rounded-2xl flex flex-col items-center text-center gap-3">
+                        <div class="icon-circle w-14 h-14 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center transition-colors">
+                            <i class="fi fi-sr-briefcase text-2xl mt-1"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-lg">บุคลากร / อาจารย์</div>
+                            <div class="text-xs text-slate-500 mt-1 font-medium">เจ้าหน้าที่และคณาจารย์ CRA</div>
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <button type="button" onclick="goToStep(2)" class="w-full btn-modern py-4 rounded-xl font-bold text-lg mt-8 flex items-center justify-center gap-2">
+                ถัดไป <i class="fi fi-sr-arrow-right mt-1"></i>
+            </button>
+        </div>
+
+        <!-- ================= STEP 2: Personal Info ================= -->
+        <div id="step2" class="step-container">
+            <h3 class="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
+                <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">2</span> 
+                ข้อมูลส่วนตัว
+            </h3>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-bold mb-2 req text-slate-700">รหัสประจำตัว (ID CRA)</label>
+                    <div class="relative">
+                        <i class="fi fi-sr-id-badge absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="number" id="idCRA" class="modern-input pl-12" placeholder="กรอกตัวเลข 6 - 12 หลัก" oninput="if(this.value.length > 12) this.value = this.value.slice(0,12);">
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1.5 font-medium">* กรณีนักศึกษาใช้รหัสนักศึกษา, บุคลากรใช้รหัสพนักงาน</p>
+                </div>
+
+                <div class="grid grid-cols-12 gap-3">
+                    <div class="col-span-12 md:col-span-4">
+                        <label class="block text-sm font-bold mb-2 req text-slate-700">คำนำหน้า</label>
+                        <select id="prefix" class="modern-select" onchange="handlePrefixChange()">
+                            <option value="" disabled selected>เลือก</option>
+                            <option value="นาย">นาย</option>
+                            <option value="นางสาว">นางสาว</option>
+                            <option value="นาง">นาง</option>
+                            <option value="อื่นๆ">อื่นๆ (ระบุ)</option>
+                        </select>
+                        <input type="text" id="prefixOther" class="modern-input mt-2 hidden" placeholder="ระบุ...">
+                    </div>
+                    <div class="col-span-6 md:col-span-4">
+                        <label class="block text-sm font-bold mb-2 req text-slate-700">ชื่อจริง</label>
+                        <input type="text" id="fname" class="modern-input" placeholder="ชื่อภาษาไทย">
+                    </div>
+                    <div class="col-span-6 md:col-span-4">
+                        <label class="block text-sm font-bold mb-2 req text-slate-700">นามสกุล</label>
+                        <input type="text" id="lname" class="modern-input" placeholder="นามสกุลภาษาไทย">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button type="button" onclick="goToStep(1)" class="w-1/3 btn-outline py-4 rounded-xl font-bold">กลับ</button>
+                <button type="button" onclick="goToStep(3)" class="w-2/3 btn-modern py-4 rounded-xl font-bold flex items-center justify-center gap-2">ถัดไป <i class="fi fi-sr-arrow-right mt-1"></i></button>
+            </div>
+        </div>
+
+        <!-- ================= STEP 3: Contact & Dept ================= -->
+        <div id="step3" class="step-container">
+            <h3 class="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
+                <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">3</span> 
+                การติดต่อและสังกัด
+            </h3>
+
+            <div class="space-y-5">
+                <div>
+                    <label id="deptLabel" class="block text-sm font-bold mb-2 req text-slate-700">หลักสูตร / สังกัด</label>
+                    <select id="department" class="modern-select">
+                        <option value="" disabled selected>-- เลือกข้อมูล --</option>
+                    </select>
+                </div>
+
+                <!-- 🟢 อัปเดต: ช่องกรอกอีเมลแบบใหม่ มีไกด์โดเมน 🟢 -->
+                <div>
+                    <label class="block text-sm font-bold mb-2 req text-slate-700">อีเมล (Email)</label>
+                    <div class="relative">
+                        <input type="email" id="email" class="modern-input font-sans" placeholder="example@email.com" oninput="suggestEmail(this.value)" autocomplete="off">
+                        <div id="emailSuggest" class="hidden absolute top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold mb-2 req text-slate-700">เบอร์โทรศัพท์มือถือ</label>
+                    <div class="relative">
+                        <i class="fi fi-sr-smartphone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="number" id="phone" class="modern-input pl-12 font-sans" placeholder="08XXXXXXXX (10 หลัก)" oninput="if(this.value.length > 10) this.value = this.value.slice(0,10);">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button type="button" onclick="goToStep(2)" class="w-1/3 btn-outline py-4 rounded-xl font-bold">กลับ</button>
+                <button type="submit" id="btnSubmit" class="w-2/3 btn-modern py-4 rounded-xl font-bold flex items-center justify-center gap-2">
+                    ยืนยันสร้างบัตร <i class="fi fi-sr-check-circle mt-1"></i>
+                </button>
+            </div>
+        </div>
     </form>
   </div>
 
-  <div id="qrView" class="glass-card w-full max-w-sm p-8 text-center hidden z-10 fade-in">
-      <h2 class="text-2xl font-black text-slate-800 mb-1">บัตรสมาชิกห้องสมุด</h2>
-      <p class="text-sm text-emerald-600 font-bold mb-6 flex items-center justify-center gap-1"><i class="fi fi-sr-shield-check mt-0.5"></i> ยืนยันตัวตนแล้ว</p>
+  <!-- ================= SUCCESS VIEW ================= -->
+  <div id="successView" class="glass-card w-full max-w-sm p-8 mt-4 text-center hidden z-10 relative">
+      <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
+          <i class="fi fi-sr-check-circle text-4xl text-green-500 mt-1"></i>
+      </div>
+      <h2 class="text-2xl font-black text-slate-800 mb-1">ลงทะเบียนสำเร็จ</h2>
+      <p class="text-sm text-slate-500 mb-6 font-medium">กรุณาบันทึกภาพหน้าจอนี้ไว้เพื่อใช้งาน QR Code</p>
       
-      <div class="bg-slate-50/50 p-5 rounded-2xl border border-slate-200 mb-6 backdrop-blur-sm shadow-inner">
-          <img id="qrImage" src="" alt="QR Code" class="w-48 h-48 mx-auto object-cover rounded-xl border border-slate-100 bg-white p-2">
+      <div class="bg-slate-50/50 p-5 rounded-2xl border border-slate-200 mb-6 backdrop-blur-sm">
+          <img id="qrImage" src="" alt="QR Code" class="w-48 h-48 mx-auto object-cover rounded-xl bg-white p-2 shadow-sm border border-slate-100">
           <h3 id="resName" class="text-lg font-bold text-slate-800 mt-5 leading-tight"></h3>
-          <p id="resId" class="text-blue-600 font-black tracking-wide break-words text-lg mt-1"></p>
+          <p id="resId" class="text-blue-600 font-black tracking-wide text-lg mt-1 break-words"></p>
       </div>
 
-      <a href="index.html" class="block w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition no-underline shadow-sm">
-          ออกจากระบบ / กลับหน้าหลัก
+      <a href="index.html" class="block w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition no-underline shadow-inner">
+          กลับสู่หน้าหลัก
       </a>
   </div>
 
   <script>
-    // ⚠️ นำ URL ของ Web App มาใส่ตรงนี้
+    // ⚠️ ต้องกำหนด URL ของ Web App
     const API_URL = "https://script.google.com/macros/s/AKfycbyQII84bz9ZD8t1sLVKw_DPBgOb-5N9yEP6MwCWlcPBWmyytR5FZUYrKLY_IA4ZYgRz/exec"; 
 
-    // 🟢 ระบบไกด์อีเมลหน้า Login
-    const allDomains = ['@cra.ac.th', '@pccms.ac.th', '@edu.ac.th'];
+    const studentCourses = ["แพทยศาสตร์", "วิทยาศาสตร์ข้อมูลสุขภาพ", "พยาบาลศาสตร์", "พยาบาลศาสตร์ (นานาชาติ)", "พยาบาลศาสตร์ (2.5 ปี)", "รังสีเทคนิค", "วิทยาศาสตร์การเคลื่อนไหวและสุขภาพ", "ฉุกเฉินการแพทย์", "นวัตกรรมวิทยาศาสตร์การแพทย์", "วิศวกรรมชีวการแพทย์", "เทคโนโลยีอาหารทางการแพทย์และสุขภาพ"];
+    const staffDepts = ["สำนักงานราชวิทยาลัยจุฬาภรณ์", "วิทยาลัยวิทยาศาสตร์การแพทย์เจ้าฟ้าจุฬาภรณ์", "คณะแพทยศาสตร์ศรีสวางควัฒน", "คณะพยาบาลศาสตร์อัครราชกุมารี", "คณะเทคโนโลยีวิทยาศาสตร์สุขภาพ", "คณะวิทยาศาสตร์", "คณะวิศวกรรมศาสตร์", "คณะนวัตกรรมอาหารและโภชนาการ", "โครงการจัดตั้งคณะเภสัชศาสตร์", "โรงพยาบาลจุฬาภรณ์"];
+
+    // 🟢 ตัวแปรสำหรับโดเมนอีเมล
+    const studentDomains = ['@cra.ac.th', '@pccms.ac.th', '@edu.ac.th'];
+    const staffDomains = ['@cra.ac.th'];
+
+    let currentStep = 1;
+
+    // 🟢 ระบบไกด์อีเมล
     function suggestEmail(val) {
         const drop = document.getElementById('emailSuggest');
-        if (val.length < 2) { drop.classList.add('hidden'); return; }
+        const userType = document.querySelector('input[name="userType"]:checked')?.value;
+        
+        if (!userType || val.length < 2) { drop.classList.add('hidden'); return; }
 
+        const domainsToUse = userType === 'นักศึกษา' ? studentDomains : staffDomains;
         let html = '';
+
         if (val.includes('@')) {
             const parts = val.split('@');
             const namePart = parts[0];
             const domainPart = parts[1];
             
-            const matched = allDomains.filter(d => d.startsWith('@' + domainPart));
+            const matched = domainsToUse.filter(d => d.startsWith('@' + domainPart));
             if (matched.length > 0 && namePart.length > 0) {
                 html = matched.map(d => `<div class="p-3 border-b border-slate-100 cursor-pointer hover:bg-blue-50 font-medium text-slate-700 transition" onclick="applyEmail('${namePart}${d}')">${namePart}<span class="text-blue-600 font-bold">${d}</span></div>`).join('');
             }
         } else {
-            html = allDomains.map(d => `<div class="p-3 border-b border-slate-100 cursor-pointer hover:bg-blue-50 font-medium text-slate-700 transition" onclick="applyEmail('${val}${d}')">${val}<span class="text-blue-600 font-bold">${d}</span></div>`).join('');
+            html = domainsToUse.map(d => `<div class="p-3 border-b border-slate-100 cursor-pointer hover:bg-blue-50 font-medium text-slate-700 transition" onclick="applyEmail('${val}${d}')">${val}<span class="text-blue-600 font-bold">${d}</span></div>`).join('');
         }
 
         if (html) { drop.innerHTML = html; drop.classList.remove('hidden'); } 
@@ -151,108 +305,160 @@
     }
 
     function applyEmail(fullEmail) {
-        document.getElementById('loginEmail').value = fullEmail;
+        document.getElementById('email').value = fullEmail;
         document.getElementById('emailSuggest').classList.add('hidden');
     }
 
+    // ซ่อน Dropdown เมื่อคลิกที่อื่น
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('#loginEmail') && !e.target.closest('#emailSuggest')) {
+        if (!e.target.closest('#email') && !e.target.closest('#emailSuggest')) {
             document.getElementById('emailSuggest').classList.add('hidden');
         }
     });
 
-    function toggleForm() {
-        const emailF = document.getElementById('emailForm');
-        const phoneF = document.getElementById('phoneForm');
-        
-        if(emailF.classList.contains('hidden')) {
-            emailF.classList.remove('hidden');
-            phoneF.classList.add('hidden');
+    window.onload = () => {
+        Swal.fire({
+            title: '<span class="text-xl font-bold">นโยบายความเป็นส่วนตัว (PDPA)</span>',
+            html: '<div class="text-sm text-left text-slate-600 leading-relaxed max-h-48 overflow-y-auto p-4 bg-slate-50 rounded-xl border border-slate-100">ห้องสมุดราชวิทยาลัยจุฬาภรณ์ ขอเก็บรวบรวมข้อมูลส่วนบุคคลของท่าน (ได้แก่ รหัสประจำตัว, ชื่อ-นามสกุล, สังกัด, อีเมล, และเบอร์โทรศัพท์) เพื่อวัตถุประสงค์ในการสร้างบัญชีผู้ใช้งาน และสร้าง QR Code สำหรับเข้าใช้บริการห้องสมุด <br><br>ข้อมูลของท่านจะถูกเก็บรักษาอย่างปลอดภัยและไม่นำไปเผยแพร่ต่อบุคคลที่สาม หากท่านยินยอมโปรดกดยืนยัน</div>',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'ข้าพเจ้ายินยอม',
+            cancelButtonText: 'ไม่ยินยอม',
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#94a3b8',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            customClass: { popup: 'rounded-3xl font-sans' }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('mainWrap').classList.remove('hidden');
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+    };
+
+    function handlePrefixChange() {
+        const p = document.getElementById('prefix').value;
+        const other = document.getElementById('prefixOther');
+        if (p === 'อื่นๆ') {
+            other.classList.remove('hidden');
         } else {
-            emailF.classList.add('hidden');
-            phoneF.classList.remove('hidden');
+            other.classList.add('hidden');
         }
     }
 
-    async function verifyUser(e, type) {
-        e.preventDefault();
+    function populateDepartment(type) {
+        const deptSelect = document.getElementById('department');
+        const deptLabel = document.getElementById('deptLabel');
+        deptSelect.innerHTML = '<option value="" disabled selected>-- เลือกข้อมูล --</option>';
         
-        let searchValue = "";
-        let btn;
-
-        if (type === 'email') {
-            // 🟢 ดึงค่าอีเมลแบบเต็มโดยไม่ฟิกซ์โดเมนแล้ว
-            searchValue = document.getElementById('loginEmail').value.trim();
-            btn = document.getElementById('btnSubmitEmail');
+        if (type === 'นักศึกษา') {
+            deptLabel.innerText = 'หลักสูตร';
+            studentCourses.forEach(c => deptSelect.innerHTML += `<option value="${c}">${c}</option>`);
         } else {
-            searchValue = document.getElementById('loginPhone').value.trim();
-            if(searchValue.length !== 10) return Swal.fire({icon:'warning', title:'เตือน', text:'เบอร์โทรศัพท์ต้องมี 10 หลัก'});
-            btn = document.getElementById('btnSubmitPhone');
+            deptLabel.innerText = 'สังกัดหน่วยงาน';
+            staffDepts.forEach(c => deptSelect.innerHTML += `<option value="${c}">${c}</option>`);
+        }
+    }
+
+    function goToStep(step) {
+        // Validation before moving next
+        if(step === 2 && currentStep === 1) {
+            const selectedType = document.querySelector('input[name="userType"]:checked');
+            if(!selectedType) return Swal.fire({icon:'warning', title:'โปรดเลือกประเภท', text:'กรุณาเลือกประเภทผู้ใช้งานก่อนดำเนินการต่อ'});
+            populateDepartment(selectedType.value);
+        }
+        
+        if(step === 3 && currentStep === 2) {
+            const idCRA = document.getElementById('idCRA').value;
+            const prefix = document.getElementById('prefix').value;
+            const fname = document.getElementById('fname').value.trim();
+            const lname = document.getElementById('lname').value.trim();
+            
+            if(idCRA.length < 6 || idCRA.length > 12) return Swal.fire({icon:'warning', text:'รหัสประจำตัวต้องมี 6-12 หลัก'});
+            if(!prefix || !fname || !lname) return Swal.fire({icon:'warning', text:'กรุณากรอกชื่อ-นามสกุลให้ครบถ้วน'});
+            if(prefix === 'อื่นๆ' && !document.getElementById('prefixOther').value.trim()) return Swal.fire({icon:'warning', text:'กรุณาระบุคำนำหน้า'});
         }
 
+        // Change Step UI
+        document.querySelectorAll('.step-container').forEach(el => el.classList.remove('step-active'));
+        document.getElementById(`step${step}`).classList.add('step-active');
+        
+        // Update Progress Bar
+        const prog1 = document.getElementById('prog1');
+        const prog2 = document.getElementById('prog2');
+        const prog3 = document.getElementById('prog3');
+        
+        if(step === 1) { prog2.classList.replace('bg-blue-600', 'bg-slate-200'); prog3.classList.replace('bg-blue-600', 'bg-slate-200'); }
+        if(step === 2) { prog2.classList.replace('bg-slate-200', 'bg-blue-600'); prog3.classList.replace('bg-blue-600', 'bg-slate-200'); }
+        if(step === 3) { prog2.classList.replace('bg-slate-200', 'bg-blue-600'); prog3.classList.replace('bg-slate-200', 'bg-blue-600'); }
+        
+        currentStep = step;
+    }
+
+    async function submitRegistration(e) {
+        e.preventDefault();
+        
+        const dept = document.getElementById('department').value;
+        // 🟢 เปลี่ยนมารับค่าจาก input อีเมลตัวใหม่
+        const fullEmail = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value;
+
+        if(!dept) return Swal.fire({icon:'warning', text:'กรุณาเลือกหลักสูตรหรือสังกัด'});
+        if(!fullEmail) return Swal.fire({icon:'warning', text:'กรุณากรอกอีเมล'});
+        if(phone.length !== 10) return Swal.fire({icon:'warning', text:'เบอร์โทรศัพท์ต้องมี 10 หลัก'});
+
+        let pref = document.getElementById('prefix').value;
+        if(pref === 'อื่นๆ') pref = document.getElementById('prefixOther').value.trim();
+        
+        const fullName = pref + document.getElementById('fname').value.trim() + " " + document.getElementById('lname').value.trim();
+        const idCRA = document.getElementById('idCRA').value;
+
+        const payload = {
+            action: 'register',
+            type: document.querySelector('input[name="userType"]:checked').value,
+            id: idCRA,
+            fullName: fullName,
+            department: dept,
+            email: fullEmail,
+            phone: phone
+        };
+
+        const btn = document.getElementById('btnSubmit');
         btn.disabled = true;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fi fi-sr-spinner animate-spin text-xl"></i> ค้นหาข้อมูล...';
+        btn.innerHTML = '<i class="fi fi-sr-spinner animate-spin text-xl"></i> ประมวลผล...';
 
         try {
-            // Step 1: Find name for confirmation
-            const res1 = await fetch(API_URL || window.location.href, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'loginStep1', searchType: type, searchValue: searchValue })
+            // Check Duplicate (Fake wait for better UX)
+            const checkRes = await fetch(API_URL || window.location.href, {
+                method: 'POST', body: JSON.stringify({ action: 'checkDuplicate', id: payload.id, email: payload.email, phone: payload.phone })
             }).then(r => r.json());
 
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-
-            if (res1.status === 'error') {
-                return Swal.fire({icon:'error', title:'ไม่พบข้อมูล', text: res1.message, confirmButtonColor: '#2563eb', customClass: { popup: 'rounded-3xl font-sans' }});
+            if (checkRes.status === 'error') {
+                btn.disabled = false; btn.innerHTML = 'ยืนยันสร้างบัตร <i class="fi fi-sr-check-circle mt-1"></i>';
+                return Swal.fire({icon:'error', title:'ไม่สามารถลงทะเบียนได้', text: checkRes.message});
             }
 
-            // Ask for confirmation
-            Swal.fire({
-                title: 'ใช่คุณหรือไม่?',
-                html: `<div class="text-xl font-bold text-blue-800 p-4 bg-blue-50 rounded-xl mt-2 border border-blue-100">${res1.name}</div>`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#2563eb',
-                cancelButtonColor: '#94a3b8',
-                confirmButtonText: 'ใช่, เข้าสู่ระบบ',
-                cancelButtonText: 'ไม่ใช่, พิมพ์ใหม่',
-                customClass: { popup: 'rounded-3xl font-sans' }
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    
-                    Swal.fire({
-                        title: 'กำลังดึงข้อมูลบัตร...',
-                        allowOutsideClick: false,
-                        didOpen: () => { Swal.showLoading() },
-                        customClass: { popup: 'rounded-3xl font-sans' }
-                    });
+            // Register
+            const regRes = await fetch(API_URL || window.location.href, {
+                method: 'POST', body: JSON.stringify(payload)
+            }).then(r => r.json());
 
-                    // Step 2: Update login time and fetch QR
-                    const res2 = await fetch(API_URL || window.location.href, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: 'loginStep2', rowIndex: res1.rowIndex })
-                    }).then(r => r.json());
+            if (regRes.status === 'success') {
+                document.getElementById('mainWrap').classList.add('hidden');
+                document.getElementById('successView').classList.remove('hidden');
+                document.getElementById('qrImage').src = regRes.qr;
+                document.getElementById('resName').innerText = regRes.name;
+                document.getElementById('resId').innerText = "ID: " + regRes.id;
+            } else {
+                throw new Error(regRes.message);
+            }
 
-                    Swal.close();
-
-                    if (res2.status === 'success') {
-                        document.getElementById('loginView').classList.add('hidden');
-                        document.getElementById('qrView').classList.remove('hidden');
-                        document.getElementById('qrImage').src = res2.qr;
-                        document.getElementById('resName').innerText = res2.name;
-                        document.getElementById('resId').innerText = "ID: " + res2.id;
-                    } else {
-                        Swal.fire({icon:'error', title:'เกิดข้อผิดพลาด', text: res2.message, customClass: { popup: 'rounded-3xl' }});
-                    }
-                }
-            });
-
-        } catch (err) {
+        } catch (error) {
             btn.disabled = false;
-            btn.innerHTML = originalText;
-            Swal.fire({icon:'error', title:'การเชื่อมต่อขัดข้อง', text:'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', customClass: { popup: 'rounded-3xl' }});
+            btn.innerHTML = 'ยืนยันสร้างบัตร <i class="fi fi-sr-check-circle mt-1"></i>';
+            Swal.fire({icon:'error', title:'เกิดข้อผิดพลาด', text: error.message});
         }
     }
   </script>
