@@ -84,14 +84,11 @@
     <p class="text-sm text-slate-500 mb-8 font-medium">สำหรับสแกนเข้าใช้บริการห้องสมุด</p>
 
     <form id="emailForm" onsubmit="verifyUser(event, 'email')" class="space-y-5 fade-in">
-        <div class="text-left">
-            <label class="block text-sm font-bold mb-2 text-slate-700">อีเมลองค์กร (CRA Email)</label>
-            <div class="flex relative group">
-                <input type="text" id="loginEmail" class="modern-input rounded-r-none border-r-0 focus:z-10 font-sans" placeholder="example.name" required pattern="[a-zA-Z0-9._\-]+">
-                <div class="bg-slate-100 border-2 border-transparent border-l-0 rounded-r-xl px-4 flex items-center text-slate-500 font-bold whitespace-nowrap transition-colors">
-                    @cra.ac.th
-                </div>
-            </div>
+        <!-- 🟢 อัปเดตช่องกรอกอีเมลในหน้า Login 🟢 -->
+        <div class="text-left relative">
+            <label class="block text-sm font-bold mb-2 text-slate-700">อีเมล (Email)</label>
+            <input type="email" id="loginEmail" class="modern-input font-sans" placeholder="กรอกอีเมลที่ลงทะเบียนไว้" required oninput="suggestEmail(this.value)" autocomplete="off">
+            <div id="emailSuggest" class="hidden absolute top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden text-left"></div>
         </div>
         <button type="submit" id="btnSubmitEmail" class="w-full btn-modern py-4 rounded-xl font-bold text-lg flex justify-center items-center gap-2">ดำเนินการต่อ <i class="fi fi-sr-arrow-right mt-1"></i></button>
         <button type="button" onclick="toggleForm()" class="text-sm text-blue-600 font-bold hover:text-blue-800 hover:underline mt-2 transition-colors">จำอีเมลไม่ได้? เข้าสู่ระบบด้วยเบอร์โทร</button>
@@ -129,6 +126,41 @@
     // ⚠️ นำ URL ของ Web App มาใส่ตรงนี้
     const API_URL = "https://script.google.com/macros/s/AKfycbyQII84bz9ZD8t1sLVKw_DPBgOb-5N9yEP6MwCWlcPBWmyytR5FZUYrKLY_IA4ZYgRz/exec"; 
 
+    // 🟢 ระบบไกด์อีเมลหน้า Login
+    const allDomains = ['@cra.ac.th', '@pccms.ac.th', '@edu.ac.th'];
+    function suggestEmail(val) {
+        const drop = document.getElementById('emailSuggest');
+        if (val.length < 2) { drop.classList.add('hidden'); return; }
+
+        let html = '';
+        if (val.includes('@')) {
+            const parts = val.split('@');
+            const namePart = parts[0];
+            const domainPart = parts[1];
+            
+            const matched = allDomains.filter(d => d.startsWith('@' + domainPart));
+            if (matched.length > 0 && namePart.length > 0) {
+                html = matched.map(d => `<div class="p-3 border-b border-slate-100 cursor-pointer hover:bg-blue-50 font-medium text-slate-700 transition" onclick="applyEmail('${namePart}${d}')">${namePart}<span class="text-blue-600 font-bold">${d}</span></div>`).join('');
+            }
+        } else {
+            html = allDomains.map(d => `<div class="p-3 border-b border-slate-100 cursor-pointer hover:bg-blue-50 font-medium text-slate-700 transition" onclick="applyEmail('${val}${d}')">${val}<span class="text-blue-600 font-bold">${d}</span></div>`).join('');
+        }
+
+        if (html) { drop.innerHTML = html; drop.classList.remove('hidden'); } 
+        else { drop.classList.add('hidden'); }
+    }
+
+    function applyEmail(fullEmail) {
+        document.getElementById('loginEmail').value = fullEmail;
+        document.getElementById('emailSuggest').classList.add('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#loginEmail') && !e.target.closest('#emailSuggest')) {
+            document.getElementById('emailSuggest').classList.add('hidden');
+        }
+    });
+
     function toggleForm() {
         const emailF = document.getElementById('emailForm');
         const phoneF = document.getElementById('phoneForm');
@@ -149,7 +181,8 @@
         let btn;
 
         if (type === 'email') {
-            searchValue = document.getElementById('loginEmail').value.trim() + "@cra.ac.th";
+            // 🟢 ดึงค่าอีเมลแบบเต็มโดยไม่ฟิกซ์โดเมนแล้ว
+            searchValue = document.getElementById('loginEmail').value.trim();
             btn = document.getElementById('btnSubmitEmail');
         } else {
             searchValue = document.getElementById('loginPhone').value.trim();
